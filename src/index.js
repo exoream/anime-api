@@ -4,6 +4,13 @@ const cors = require("cors");
 
 const app = express();
 
+app.get("/", (req, res) => {
+  res.json({
+    status: true,
+    message: "Welcome to the Anime API",
+  });
+});
+
 app.use("/anime", router);
 app.use(cors());
 
