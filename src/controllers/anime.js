@@ -451,6 +451,113 @@ const getEpisodeAnime = async (req, res) => {
   }
 };
 
+const getBatchAnime = async (req, res) => {
+  try {
+    const { animeCode, animeId, batchId } = req.params;
+
+    const urlBatch = `${baseUrl}/anime/${animeCode}/${animeId}/batch/${batchId}`;
+    const response = await fetch(urlBatch);
+    const data = await response.text();
+
+    const $ = cheerio.load(data);
+
+    // Check for kps data
+    const kps = $("div.mt-3:nth-child(2)").attr("data-kps");
+    if (!kps) {
+      return res.status(500).json({
+        status: false,
+        message: "KPS not found.",
+      });
+    }
+
+    const kpsResponse = await fetch(`${baseUrl}/assets/js/${kps}.js`);
+    const kpsBody = await kpsResponse.text();
+
+    const extractedData = extractData(kpsBody);
+
+    if (!extractedData) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to extract necessary data.",
+      });
+    }
+
+    const authResponse = await fetch(
+      `${baseUrl}/assets/${extractedData.MIX_AUTH_ROUTE_PARAM}`
+    );
+    const auth = await authResponse.text();
+
+    const servers = ["kuramadrive", "archive", "archive-v2"];
+    const promises = servers.map(async (server) => {
+      const videoResponse = await fetch(
+        `${baseUrl}/anime/${animeCode}/${animeId}/batch/${batchId}?${extractedData.MIX_PAGE_TOKEN_KEY}=${auth}&${extractedData.MIX_STREAM_SERVER_KEY}=${server}`
+      );
+      const videoData = await videoResponse.text();
+      const $ = cheerio.load(videoData);
+
+      // Extract download links
+      const downloadLinks = $("#animeDownloadLink h6")
+        .map((i, elem) => {
+          const quality = $(elem).text().trim();
+          const links = $(elem)
+            .nextAll("a")
+            .map((j, link) => ({
+              title: $(link).text().trim(),
+              url: $(link).attr("href"),
+            }))
+            .get();
+          return { quality, links };
+        })
+        .get();
+
+      return downloadLinks;
+    });
+
+    const results = await Promise.all(promises);
+    const combinedDownloadLinks = results.flat();
+
+    res.status(200).json({ downloadLinks: combinedDownloadLinks });
+  } catch (error) {
+    console.error(error.message); // Improved error logging
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+const getAnimeList = async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+
+    // Buat URL dan ambil data dari URL
+    const urlOngoing = `${baseUrl}/anime?order_by=text&page=${page}`;
+    const response = await fetch(urlOngoing);
+    const data = await response.text();
+
+    const $ = cheerio.load(data);
+    let listAnime = [];
+
+    // Parse data anime dari HTML
+    $("#animeList .anime__text").each((index, element) => {
+      const animeTitle = $(element).find("a.anime__list__link").text().trim();
+      const animeUrl = $(element).find("a.anime__list__link").attr("href");
+
+      if (animeTitle && animeUrl) {
+        listAnime.push({
+          title: animeTitle,
+          url: animeUrl,
+        });
+      }
+    });
+    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
+
+    res.status(200).json({ listAnime, nextPage, prevPage });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getOngoingAnime,
   getFinisedAnime,
@@ -458,4 +565,6 @@ module.exports = {
   getAnimeDetails,
   searchAnime,
   getEpisodeAnime,
+  getBatchAnime,
+  getAnimeList,
 };
