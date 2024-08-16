@@ -558,6 +558,62 @@ const getAnimeList = async (req, res) => {
   }
 };
 
+const getScheduleAnime = async (req, res) => {
+  try {
+    const scheduled_day = req.query.scheduled_day || "all";
+    const page = req.query.page || 1;
+
+    // Buat URL dan ambil data dari URL
+    const urlOngoing = `${baseUrl}/schedule?scheduled_day=${scheduled_day}&page=${page}`;
+    const response = await fetch(urlOngoing);
+    const data = await response.text();
+
+    // Muat data HTML dengan cheerio
+    const $ = cheerio.load(data);
+    let ongoingAnime = [];
+
+    // Parse data anime dari HTML
+    $("#animeList > div > div").each((index, element) => {
+      const title = $(element).find("div > h5").text().trim();
+      const image = $(element).find("a > div").attr("data-setbg");
+      const schedule = $(element).find("a > div > div.ep > span:nth-child(1)").text().trim();
+      const actual_schedule = $(element).find("a > div > div.ep > span:nth-child(2)").text().trim();
+      const day = $(element).find("a > div > div.view-end > ul > li:nth-child(1) > span").text().trim();
+      const time = $(element).find("a > div > div.view-end > ul > li:nth-child(2) > span").text().trim();
+      const type = $(element)
+        .find("div > ul > a")
+        .map((index, element) => $(element).text().trim())
+        .get();
+      const animeCode = $(element).find("a").attr("href")?.split("/")[4];
+      const animeId = $(element).find("a").attr("href")?.split("/")[5];
+
+      if (title && image && schedule && actual_schedule && day && time && type && animeCode && animeId) {
+        ongoingAnime.push({
+          title,
+          image,
+          schedule,
+          actual_schedule,
+          day,
+          time,
+          type,
+          animeCode,
+          animeId,
+        });
+      }
+    });
+
+    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
+
+    console.log(ongoingAnime);
+    res.status(200).json({ ongoingAnime, nextPage, prevPage });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getOngoingAnime,
   getFinisedAnime,
@@ -567,4 +623,5 @@ module.exports = {
   getEpisodeAnime,
   getBatchAnime,
   getAnimeList,
+  getScheduleAnime
 };

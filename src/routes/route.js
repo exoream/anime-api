@@ -1,5 +1,5 @@
 const express = require("express");
-const { getOngoingAnime, getFinisedAnime, getMovieAnime, getAnimeDetails, searchAnime, getEpisodeAnime, getBatchAnime, getAnimeList } = require("../controllers/anime");
+const { getOngoingAnime, getFinisedAnime, getMovieAnime, getAnimeDetails, searchAnime, getEpisodeAnime, getBatchAnime, getAnimeList, getScheduleAnime } = require("../controllers/anime");
 
 const router = express.Router();
 
@@ -11,6 +11,7 @@ router.get("/search", searchAnime);
 router.get("/:animeCode/:animeId/:episodeId", getEpisodeAnime);
 router.get("/:animeCode/:animeId/batch/:batchId", getBatchAnime);
 router.get("/list", getAnimeList);
+router.get("/schedule", getScheduleAnime);
 
 module.exports = router;
 
