@@ -570,7 +570,7 @@ const getScheduleAnime = async (req, res) => {
 
     // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
-    let ongoingAnime = [];
+    let scheduleAnime = [];
 
     // Parse data anime dari HTML
     $("#animeList > div > div").each((index, element) => {
@@ -588,7 +588,7 @@ const getScheduleAnime = async (req, res) => {
       const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
       if (title && image && schedule && actual_schedule && day && time && type && animeCode && animeId) {
-        ongoingAnime.push({
+        scheduleAnime.push({
           title,
           image,
           schedule,
@@ -606,8 +606,57 @@ const getScheduleAnime = async (req, res) => {
     const nextPage = $("a.gray__color .fa-angle-right").length === 0;
     const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
-    console.log(ongoingAnime);
-    res.status(200).json({ ongoingAnime, nextPage, prevPage });
+    console.log(scheduleAnime);
+    res.status(200).json({ scheduleAnime, nextPage, prevPage });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getSummerAnime = async (req, res) => {
+  try {
+    const order_by = req.query.order_by || "popular";
+    const page = req.query.page || 1;
+
+    // Buat URL dan ambil data dari URL
+    const urlOngoing = `${baseUrl}/properties/season/summer-2024?order_by=${order_by}&page=${page}`;
+    const response = await fetch(urlOngoing);
+    const data = await response.text();
+
+    // Muat data HTML dengan cheerio
+    const $ = cheerio.load(data);
+    let summerAnime = [];
+
+    // Parse data anime dari HTML
+    $("#animeList > div > div").each((index, element) => {
+      const title = $(element).find("div > h5").text().trim();
+      const image = $(element).find("a > div").attr("data-setbg");
+      const ratings = $(element).find("a > div > div.ep > span").text().trim();
+      const type = $(element)
+        .find("div > ul > a")
+        .map((index, element) => $(element).text().trim())
+        .get();
+      const animeCode = $(element).find("a").attr("href")?.split("/")[4];
+      const animeId = $(element).find("a").attr("href")?.split("/")[5];
+
+      if (title && image && ratings && type && animeCode && animeId) {
+        summerAnime.push({
+          title,
+          image,
+          ratings,
+          type,
+          animeCode,
+          animeId,
+        });
+      }
+    });
+
+    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
+
+    res.status(200).json({ summerAnime, nextPage, prevPage });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -623,5 +672,6 @@ module.exports = {
   getEpisodeAnime,
   getBatchAnime,
   getAnimeList,
-  getScheduleAnime
+  getScheduleAnime,
+  getSummerAnime,
 };
