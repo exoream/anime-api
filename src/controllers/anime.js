@@ -577,7 +577,7 @@ const getScheduleAnime = async (req, res) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
       const schedule = $(element).find("a > div > div.ep > span:nth-child(1)").text().trim();
-      const actual_schedule = $(element).find("a > div > div.ep > span:nth-child(2)").text().trim();
+      const actualSchedule = $(element).find("a > div > div.ep > span:nth-child(2)").text().trim();
       const day = $(element).find("a > div > div.view-end > ul > li:nth-child(1) > span").text().trim();
       const time = $(element).find("a > div > div.view-end > ul > li:nth-child(2) > span").text().trim();
       const type = $(element)
@@ -587,12 +587,12 @@ const getScheduleAnime = async (req, res) => {
       const animeCode = $(element).find("a").attr("href")?.split("/")[4];
       const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
-      if (title && image && schedule && actual_schedule && day && time && type && animeCode && animeId) {
+      if (title && image && schedule && actualSchedule && day && time && type && animeCode && animeId) {
         scheduleAnime.push({
           title,
           image,
           schedule,
-          actual_schedule,
+          actualSchedule,
           day,
           time,
           type,
