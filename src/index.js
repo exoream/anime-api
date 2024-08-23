@@ -4,6 +4,7 @@ const cors = require("cors");
 
 const app = express();
 
+app.use(cors());
 app.get("/", (req, res) => {
   res.json({
     status: true,
@@ -12,7 +13,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/anime", router);
-app.use(cors());
+
 
 app.listen(8080, () => {
   console.log("Server is running on http://localhost:8080");
