@@ -426,12 +426,12 @@ const getEpisodeAnime = async (req, res) => {
     const downloadLinks = results[0].downloadLinks;
 
     res.json({
-      title,
-      anime_id,
-      prev_episode_number,
-      next_episode_number,
+      title: title,
+      animeId: anime_id,
+      prevEpisodeNumber: prev_episode_number,
+      nextEpisodeNumber: next_episode_number,
       videoList: combinedVideoList,
-      downloadLinks,
+      downloadLinks: downloadLinks,
     });
   } catch (error) {
     console.error(error);
