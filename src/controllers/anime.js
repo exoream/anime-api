@@ -538,12 +538,14 @@ const getAnimeList = async (req, res) => {
     // Parse data anime dari HTML
     $("#animeList .anime__text").each((index, element) => {
       const animeTitle = $(element).find("a.anime__list__link").text().trim();
-      const animeUrl = $(element).find("a.anime__list__link").attr("href");
+      const animeCode = $(element).find("a.anime__list__link").attr("href")?.split("/")[4];
+      const animeId = $(element).find("a.anime__list__link").attr("href")?.split("/")[5];
 
-      if (animeTitle && animeUrl) {
+      if (animeTitle && animeCode && animeId) {
         listAnime.push({
           title: animeTitle,
-          url: animeUrl,
+          animeCode: animeCode,
+          animeId: animeId,
         });
       }
     });
