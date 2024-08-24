@@ -1,6 +1,7 @@
 const cheerio = require("cheerio");
 const baseUrl = require("../utils/constanta/url");
 const extractData = require("../utils/helper/extract_data");
+const getEpisodeList = require("../utils/helper/episode_data");
 
 const getOngoingAnime = async (req, res) => {
   try {
@@ -250,20 +251,7 @@ const getAnimeDetails = async (req, res) => {
       .map((index, element) => $(element).text().trim())
       .get();
 
-    const episodeListRaw = $("#episodeLists").attr("data-content");
-    const episodeList$ = cheerio.load(episodeListRaw);
-
-    const episodeList = episodeList$("a")
-      .map((index, element) => {
-        const episodeTitle = episodeList$(element).text().trim();
-        const episodeLink = episodeList$(element).attr("href");
-
-        return {
-          title: episodeTitle,
-          link: episodeLink,
-        };
-      })
-      .get();
+    const allEpisodes = await getEpisodeList(urlAnime);
 
     animeDetails = {
       title: title,
@@ -288,7 +276,7 @@ const getAnimeDetails = async (req, res) => {
       enthusiast: enthusiast,
       ratings: ratings,
       credit: credit,
-      episodeList: episodeList,
+      episodeList: allEpisodes,
     };
 
     res.status(200).json({ animeDetails });
@@ -538,8 +526,14 @@ const getAnimeList = async (req, res) => {
     // Parse data anime dari HTML
     $("#animeList .anime__text").each((index, element) => {
       const animeTitle = $(element).find("a.anime__list__link").text().trim();
-      const animeCode = $(element).find("a.anime__list__link").attr("href")?.split("/")[4];
-      const animeId = $(element).find("a.anime__list__link").attr("href")?.split("/")[5];
+      const animeCode = $(element)
+        .find("a.anime__list__link")
+        .attr("href")
+        ?.split("/")[4];
+      const animeId = $(element)
+        .find("a.anime__list__link")
+        .attr("href")
+        ?.split("/")[5];
 
       if (animeTitle && animeCode && animeId) {
         listAnime.push({
@@ -578,10 +572,22 @@ const getScheduleAnime = async (req, res) => {
     $("#animeList > div > div").each((index, element) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
-      const schedule = $(element).find("a > div > div.ep > span:nth-child(1)").text().trim();
-      const actualSchedule = $(element).find("a > div > div.ep > span:nth-child(2)").text().trim();
-      const day = $(element).find("a > div > div.view-end > ul > li:nth-child(1) > span").text().trim();
-      const time = $(element).find("a > div > div.view-end > ul > li:nth-child(2) > span").text().trim();
+      const schedule = $(element)
+        .find("a > div > div.ep > span:nth-child(1)")
+        .text()
+        .trim();
+      const actualSchedule = $(element)
+        .find("a > div > div.ep > span:nth-child(2)")
+        .text()
+        .trim();
+      const day = $(element)
+        .find("a > div > div.view-end > ul > li:nth-child(1) > span")
+        .text()
+        .trim();
+      const time = $(element)
+        .find("a > div > div.view-end > ul > li:nth-child(2) > span")
+        .text()
+        .trim();
       const type = $(element)
         .find("div > ul > a")
         .map((index, element) => $(element).text().trim())
@@ -589,7 +595,17 @@ const getScheduleAnime = async (req, res) => {
       const animeCode = $(element).find("a").attr("href")?.split("/")[4];
       const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
-      if (title && image && schedule && actualSchedule && day && time && type && animeCode && animeId) {
+      if (
+        title &&
+        image &&
+        schedule &&
+        actualSchedule &&
+        day &&
+        time &&
+        type &&
+        animeCode &&
+        animeId
+      ) {
         scheduleAnime.push({
           title,
           image,
