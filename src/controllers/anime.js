@@ -506,7 +506,7 @@ const getBatchAnime = async (req, res) => {
 
     res.status(200).json({ downloadLinks: combinedDownloadLinks });
   } catch (error) {
-    console.error(error.message); // Improved error logging
+    console.error(error.message);
     res.status(500).json({ status: false, message: error.message });
   }
 };
@@ -515,7 +515,6 @@ const getAnimeList = async (req, res) => {
   try {
     const page = req.query.page || 1;
 
-    // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/anime?order_by=text&page=${page}`;
     const response = await fetch(urlOngoing);
     const data = await response.text();
@@ -523,7 +522,6 @@ const getAnimeList = async (req, res) => {
     const $ = cheerio.load(data);
     let listAnime = [];
 
-    // Parse data anime dari HTML
     $("#animeList .anime__text").each((index, element) => {
       const animeTitle = $(element).find("a.anime__list__link").text().trim();
       const animeCode = $(element)
@@ -543,7 +541,7 @@ const getAnimeList = async (req, res) => {
         });
       }
     });
-    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+
     const nextPage = $("a.gray__color .fa-angle-right").length === 0;
     const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
@@ -559,16 +557,13 @@ const getScheduleAnime = async (req, res) => {
     const scheduled_day = req.query.scheduled_day || "all";
     const page = req.query.page || 1;
 
-    // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/schedule?scheduled_day=${scheduled_day}&page=${page}`;
     const response = await fetch(urlOngoing);
     const data = await response.text();
 
-    // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
     let scheduleAnime = [];
 
-    // Parse data anime dari HTML
     $("#animeList > div > div").each((index, element) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
@@ -620,7 +615,6 @@ const getScheduleAnime = async (req, res) => {
       }
     });
 
-    // Tentukan apakah ada halaman berikutnya atau sebelumnya
     const nextPage = $("a.gray__color .fa-angle-right").length === 0;
     const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
@@ -637,16 +631,13 @@ const getSummerAnime = async (req, res) => {
     const order_by = req.query.order_by || "popular";
     const page = req.query.page || 1;
 
-    // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/properties/season/summer-2024?order_by=${order_by}&page=${page}`;
     const response = await fetch(urlOngoing);
     const data = await response.text();
 
-    // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
     let summerAnime = [];
 
-    // Parse data anime dari HTML
     $("#animeList > div > div").each((index, element) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
@@ -670,11 +661,93 @@ const getSummerAnime = async (req, res) => {
       }
     });
 
-    // Tentukan apakah ada halaman berikutnya atau sebelumnya
     const nextPage = $("a.gray__color .fa-angle-right").length === 0;
     const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
     res.status(200).json({ summerAnime, nextPage, prevPage });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getListPropertiesAnime = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    const urlProperties = `${baseUrl}/properties/${type}`;
+    const response = await fetch(urlProperties);
+    const data = await response.text();
+
+    const $ = cheerio.load(data);
+    let propertiesAnime = [];
+
+    $(".kuramanime__genres > ul > li").each((index, element) => {
+      const name = $(element).find("a").text().trim();
+      const propertiesId = $(element)
+        .find("a")
+        .attr("href")
+        .split("/")[5]
+        .split("?")[0];
+
+      if (name && propertiesId) {
+        propertiesAnime.push({
+          name,
+          propertiesId,
+        });
+      }
+    });
+    console.log(propertiesAnime);
+    res.status(200).json({ propertiesAnime });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getPropertiesAnimeDetails = async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const order_by = req.query.order_by || "updated";
+    const page = req.query.page || 1;
+
+    const urlProperties = `${baseUrl}/properties/${type}/${id}?order_by=${order_by}&page=${page}`;
+    const response = await fetch(urlProperties);
+    const data = await response.text();
+
+    const $ = cheerio.load(data);
+    let propertiesDetails = [];
+
+    $("#animeList > div > div").each((index, element) => {
+      const title = $(element).find("div > h5").text().trim();
+      const image = $(element).find("a > div").attr("data-setbg");
+      const ratings = $(element).find("a > div > div.ep > span").text().trim();
+      const type = $(element)
+        .find("div > ul > a")
+        .map((index, element) => $(element).text().trim())
+        .get();
+      const animeCode = $(element).find("a").attr("href")?.split("/")[4];
+      const animeId = $(element).find("a").attr("href")?.split("/")[5];
+
+      if (title && image && ratings && type && animeCode && animeId) {
+        propertiesDetails.push({
+          title,
+          image,
+          ratings,
+          type,
+          animeCode,
+          animeId,
+        });
+      }
+    });
+
+    const hasPagination = $(".product__pagination").length > 0;
+    const prevPage =
+      hasPagination && $("a.gray__color .fa-angle-left").length === 0;
+    const nextPage =
+      hasPagination && $("a.gray__color .fa-angle-right").length === 0;
+
+    res.status(200).json({ propertiesDetails, nextPage, prevPage });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -692,4 +765,6 @@ module.exports = {
   getAnimeList,
   getScheduleAnime,
   getSummerAnime,
+  getListPropertiesAnime,
+  getPropertiesAnimeDetails,
 };
