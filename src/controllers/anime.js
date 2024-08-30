@@ -253,6 +253,25 @@ const getAnimeDetails = async (req, res) => {
 
     const allEpisodes = await getEpisodeList(urlAnime);
 
+    const batchElement = $("#episodeBatchLists");
+    let batchId = "?";
+
+    if (batchElement.length) {
+      const batchContent = batchElement.attr("data-content");
+
+      if (batchContent) {
+        const $batchContent = cheerio.load(batchContent);
+        const batchLink = $batchContent("a").attr("href");
+
+        if (batchLink) {
+          const parts = batchLink.split("/");
+          batchId = parts[parts.length - 1] || "?";
+        }
+      }
+    }
+
+    console.log(batchId);
+
     animeDetails = {
       title: title,
       alternativeTitles: alternativeTitles,
@@ -276,6 +295,7 @@ const getAnimeDetails = async (req, res) => {
       enthusiast: enthusiast,
       ratings: ratings,
       credit: credit,
+      batchId: batchId,
       episodeList: allEpisodes,
     };
 
