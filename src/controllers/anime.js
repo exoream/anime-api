@@ -754,11 +754,11 @@ const getListPropertiesAnime = async (req, res) => {
 
 const getPropertiesAnimeDetails = async (req, res) => {
   try {
-    const { type, id } = req.params;
+    const { type, id, name } = req.params;
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    const urlProperties = `${baseUrl}/properties/${type}/${id}?order_by=${order_by}&page=${page}`;
+    const urlProperties = `${baseUrl}/properties/${type}/${id}?order_by=${order_by}&name=${name}&page=${page}`;
     const response = await fetch(urlProperties);
     const data = await response.text();
 
