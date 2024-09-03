@@ -1,3 +1,3 @@
-const baseUrl = "https://kuramanime.boo";
+const baseUrl = "https://kuramanime.biz";
 
 module.exports = baseUrl;
