@@ -356,15 +356,15 @@ const searchAnime = async (req, res) => {
 const getEpisodeAnime = async (req, res) => {
   try {
     const { animeCode, animeId, episodeId } = req.params;
-    const servers = ["kuramadrive", "archive", "archive-v2"];
-    const urlEpisode = `${baseUrl}/anime/${animeCode}/${animeId}/episode/${episodeId}`;
 
+    const urlEpisode = `${baseUrl}/anime/${animeCode}/${animeId}/episode/${episodeId}`;
     const response = await fetch(urlEpisode);
     const data = await response.text();
 
     const $ = cheerio.load(data);
-    const kps = $("div.mt-3:nth-child(2)").attr("data-kps");
 
+    // Check for kps data
+    const kps = $("div.mt-3:nth-of-type(2)").attr("data-kps");
     if (!kps) {
       return res.status(500).json({
         status: false,
@@ -389,6 +389,9 @@ const getEpisodeAnime = async (req, res) => {
     );
     const auth = await authResponse.text();
 
+    const servers = ["kuramadrive", "archive", "archive-v2"];
+    const downloadLinksMap = new Map();
+
     const promises = servers.map(async (server) => {
       const videoResponse = await fetch(
         `${baseUrl}/anime/${animeCode}/${animeId}/episode/${episodeId}?${extractedData.MIX_PAGE_TOKEN_KEY}=${auth}&${extractedData.MIX_STREAM_SERVER_KEY}=${server}`
@@ -396,6 +399,7 @@ const getEpisodeAnime = async (req, res) => {
       const videoData = await videoResponse.text();
       const $ = cheerio.load(videoData);
 
+      // Extract episode details
       const title = $("#episodeTitle").text().trim();
       const anime_id = $(".center__nav").attr("href")?.split("/")[5];
       const prev_episode_number = $(".before__nav.ep-button")
@@ -413,19 +417,43 @@ const getEpisodeAnime = async (req, res) => {
         .get();
 
       // Extract download links
-      const downloadLinks = $("#animeDownloadLink h6")
-        .map((i, elem) => {
-          const quality = $(elem).text().trim();
-          const links = $(elem)
-            .nextAll("a")
-            .map((j, link) => ({
-              title: $(link).text().trim(),
-              url: $(link).attr("href"),
-            }))
-            .get();
-          return { quality, links };
-        })
-        .get();
+      $("#animeDownloadLink h6").each((i, elem) => {
+        const quality = $(elem).text().trim();
+        const links = [];
+
+        $(elem)
+          .nextUntil("h6")
+          .filter("a")
+          .each((j, sibling) => {
+            links.push({
+              title: $(sibling).text().trim(),
+              url: $(sibling).attr("href"),
+            });
+          });
+
+        if (
+          ["MKV 480p", "MKV 720p", "MP4 360p", "MP4 480p", "MP4 720p"].some(
+            (q) => quality.includes(q)
+          )
+        ) {
+          // Use quality as key to avoid duplication
+          if (!downloadLinksMap.has(quality)) {
+            downloadLinksMap.set(quality, links);
+          } else {
+            // Merge links if quality already exists
+            const existingLinks = downloadLinksMap.get(quality);
+            links.forEach((link) => {
+              if (
+                !existingLinks.some(
+                  (existingLink) => existingLink.url === link.url
+                )
+              ) {
+                existingLinks.push(link);
+              }
+            });
+          }
+        }
+      });
 
       return {
         title,
@@ -433,31 +461,40 @@ const getEpisodeAnime = async (req, res) => {
         prev_episode_number,
         next_episode_number,
         videoList,
-        downloadLinks,
       };
     });
 
     const results = await Promise.all(promises);
-    const combinedVideoList = results.flatMap((result) => result.videoList);
-    const title = results[0].title;
-    const anime_id = results[0].anime_id;
-    const prev_episode_number = results[0].prev_episode_number;
-    const next_episode_number = results[0].next_episode_number;
-    const downloadLinks = results[0].downloadLinks;
 
-    res.json({
-      title: title,
+    // Extract the common details
+    const title = results[0]?.title;
+    const anime_id = results[0]?.anime_id;
+    const prev_episode_number = results[0]?.prev_episode_number;
+    const next_episode_number = results[0]?.next_episode_number;
+
+    // Combine video lists from all servers
+    const combinedVideoList = results.flatMap((result) => result.videoList);
+
+    // Convert download links map to array
+    const combinedDownloadLinks = Array.from(
+      downloadLinksMap,
+      ([quality, links]) => ({ quality, links })
+    );
+
+    res.status(200).json({
+      title,
       animeId: anime_id,
       prevEpisodeNumber: prev_episode_number,
       nextEpisodeNumber: next_episode_number,
       videoList: combinedVideoList,
-      downloadLinks: downloadLinks,
+      downloadLinks: combinedDownloadLinks,
     });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ status: false, message: error.message });
   }
 };
+
 
 const getBatchAnime = async (req, res) => {
   try {
