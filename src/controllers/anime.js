@@ -432,7 +432,7 @@ const getEpisodeAnime = async (req, res) => {
           });
 
         if (
-          ["MKV 480p", "MKV 720p", "MP4 360p", "MP4 480p", "MP4 720p"].some(
+          ["MKV 480p", "MKV 720p", "MKV 1080p", "MP4 360p", "MP4 480p", "MP4 720p", "MP4 1080p"].some(
             (q) => quality.includes(q)
           )
         ) {
@@ -558,7 +558,7 @@ const getBatchAnime = async (req, res) => {
             });
 
           if (
-            ["MKV 480p", "MKV 720p", "MP4 360p", "MP4 480p", "MP4 720p"].some(
+            ["MKV 480p", "MKV 720p", "MKV 1080p", "MP4 360p", "MP4 480p", "MP4 720p", "MP4 1080p"].some(
               (q) => quality.includes(q)
             )
           ) {
