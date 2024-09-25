@@ -10,8 +10,17 @@ const getOngoingAnime = async (req, res) => {
 
     // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const response = await fetch(urlOngoing);
+    const response = await fetch(urlOngoing, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     const data = await response.text();
+
+    console.log(response.status);
+    console.log(data);
 
     // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
@@ -432,9 +441,15 @@ const getEpisodeAnime = async (req, res) => {
           });
 
         if (
-          ["MKV 480p", "MKV 720p", "MKV 1080p", "MP4 360p", "MP4 480p", "MP4 720p", "MP4 1080p"].some(
-            (q) => quality.includes(q)
-          )
+          [
+            "MKV 480p",
+            "MKV 720p",
+            "MKV 1080p",
+            "MP4 360p",
+            "MP4 480p",
+            "MP4 720p",
+            "MP4 1080p",
+          ].some((q) => quality.includes(q))
         ) {
           // Use quality as key to avoid duplication
           if (!downloadLinksMap.has(quality)) {
@@ -494,7 +509,6 @@ const getEpisodeAnime = async (req, res) => {
     res.status(500).json({ status: false, message: error.message });
   }
 };
-
 
 const getBatchAnime = async (req, res) => {
   try {
@@ -558,9 +572,15 @@ const getBatchAnime = async (req, res) => {
             });
 
           if (
-            ["MKV 480p", "MKV 720p", "MKV 1080p", "MP4 360p", "MP4 480p", "MP4 720p", "MP4 1080p"].some(
-              (q) => quality.includes(q)
-            )
+            [
+              "MKV 480p",
+              "MKV 720p",
+              "MKV 1080p",
+              "MP4 360p",
+              "MP4 480p",
+              "MP4 720p",
+              "MP4 1080p",
+            ].some((q) => quality.includes(q))
           ) {
             // Use quality as key to avoid duplication
             if (!downloadLinksMap.has(quality)) {
