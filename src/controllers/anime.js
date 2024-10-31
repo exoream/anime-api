@@ -8,14 +8,21 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Step 1: Ambil halaman awal untuk mendapatkan semua header respons dan cookies
+    // Step 1: Ambil halaman awal untuk mendapatkan CSRF token dan cookies
     const initialResponse = await fetch(`${baseUrl}`, { credentials: 'include' });
-    const csrfCookies = initialResponse.headers.get('set-cookie');
-    const initialData = await initialResponse.text();
 
-    // Coba muat halaman awal dengan cheerio dan cari token CSRF dalam cookie
+    // Periksa apakah respons awal berhasil
+    if (!initialResponse.ok) {
+      throw new Error(`Initial fetch failed with status: ${initialResponse.status}`);
+    }
+
+    // Ambil cookies dari header
+    const csrfCookies = initialResponse.headers.get('set-cookie');
+    console.log("CSRF Cookies:", csrfCookies); // Log untuk debugging
+
+    // Ambil token XSRF
     const csrfToken = csrfCookies
-      .split('; ')
+      ?.split('; ')
       .find(cookie => cookie.startsWith('XSRF-TOKEN='))
       ?.split('=')[1];
 
@@ -35,6 +42,7 @@ const getOngoingAnime = async (req, res) => {
       credentials: 'include',
     });
 
+    // Periksa apakah respons berhasil
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
@@ -81,6 +89,7 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const getFinisedAnime = async (req, res) => {
