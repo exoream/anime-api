@@ -8,10 +8,28 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Buat URL dan ambil data dari URL
+    // Step 1: Ambil CSRF token dan session cookie
+    const csrfResponse = await fetch(`${baseUrl}`, { credentials: 'include' });
+    const csrfCookies = csrfResponse.headers.get('set-cookie');
+    const csrfData = await csrfResponse.text();
+    
+    // Muat halaman awal dengan cheerio untuk mendapatkan token CSRF
+    const $csrf = cheerio.load(csrfData);
+    const csrfToken = $csrf('meta[name="csrf-token"]').attr('content');
+
+    if (!csrfToken) {
+      throw new Error("CSRF token not found");
+    }
+
+    // Step 2: Buat URL dan ambil data dari URL dengan menyertakan CSRF token dan cookies
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
     const response = await fetch(urlOngoing, {
-      credentials: "include",
+      method: 'GET',
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+        'Cookie': csrfCookies,
+      },
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -60,6 +78,7 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const getFinisedAnime = async (req, res) => {
