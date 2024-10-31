@@ -8,30 +8,47 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
+    // Ambil halaman pertama untuk mendapatkan CSRF token dan cookie
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
     const initialResponse = await fetch(urlOngoing);
-    const initialData = await initialResponse.text();
+    
+    // Periksa status response
+    if (initialResponse.status !== 200) {
+      console.error(`Error: ${initialResponse.status}`);
+      return res.status(initialResponse.status).json({ error: "Gagal mengambil halaman" });
+    }
 
-    // Load the initial HTML response to extract the CSRF token
+    const initialData = await initialResponse.text();
+    
+    // Ambil CSRF token dari halaman
     const $ = cheerio.load(initialData);
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
-    // Check if CSRF token was found
+    // Ambil cookie dari response
+    const cookies = initialResponse.headers.get('set-cookie');
+
+    // Periksa apakah CSRF token ditemukan
     if (!csrfToken) {
-      return res.status(500).json({ error: "CSRF token not found" });
+      return res.status(500).json({ error: "CSRF token tidak ditemukan" });
     }
 
+    // Lakukan permintaan dengan CSRF token dan cookie
     const headers = {
       'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken,
+      'Cookie': cookies, // Sertakan cookies yang diperoleh
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Referer': urlOngoing // Pastikan referer sesuai
     };
 
-    // Make a second fetch request with the headers
     const response = await fetch(urlOngoing, { headers });
     const data = await response.text();
 
-    console.log(response.status);
-    console.log(data);
+    // Cek status response
+    if (response.status !== 200) {
+      console.error(`Error: ${response.status}`);
+      return res.status(response.status).json({ error: "Gagal mengambil data" });
+    }
 
     let ongoingAnime = [];
 
@@ -58,17 +75,16 @@ const getOngoingAnime = async (req, res) => {
       }
     });
 
-    // Check for next and previous pages
     const nextPage = $("a.gray__color .fa-angle-right").length === 0;
     const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
-    console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const getFinisedAnime = async (req, res) => {
