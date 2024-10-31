@@ -8,15 +8,18 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Step 1: Ambil CSRF token dan session cookie
-    const csrfResponse = await fetch(`${baseUrl}`, { credentials: 'include' });
-    const csrfCookies = csrfResponse.headers.get('set-cookie');
-    const csrfData = await csrfResponse.text();
-    
-    // Muat halaman awal dengan cheerio untuk mendapatkan token CSRF
-    const $csrf = cheerio.load(csrfData);
-    const csrfToken = $csrf('meta[name="csrf-token"]').attr('content');
+    // Step 1: Ambil halaman awal untuk mendapatkan semua header respons dan cookies
+    const initialResponse = await fetch(`${baseUrl}`, { credentials: 'include' });
+    const csrfCookies = initialResponse.headers.get('set-cookie');
+    const initialData = await initialResponse.text();
 
+    // Coba muat halaman awal dengan cheerio dan cari token CSRF dalam cookie
+    const csrfToken = csrfCookies
+      .split('; ')
+      .find(cookie => cookie.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
+
+    // Verifikasi apakah token CSRF ditemukan
     if (!csrfToken) {
       throw new Error("CSRF token not found");
     }
@@ -78,7 +81,6 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 
 const getFinisedAnime = async (req, res) => {
