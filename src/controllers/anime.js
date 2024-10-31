@@ -11,15 +11,15 @@ const getOngoingAnime = async (req, res) => {
     // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
     const response = await fetch(urlOngoing, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-      },
+      credentials: "include",
     });
-    const data = await response.text();
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.text();
     console.log(response.status);
-    console.log(data);
 
     // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
@@ -50,8 +50,8 @@ const getOngoingAnime = async (req, res) => {
     });
 
     // Tentukan apakah ada halaman berikutnya atau sebelumnya
-    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
-    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
+    const nextPage = $("a.gray__color .fa-angle-right").length > 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length > 0;
 
     console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
@@ -60,6 +60,7 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const getFinisedAnime = async (req, res) => {
   try {
