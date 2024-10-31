@@ -8,61 +8,34 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    const mainPageResponse = await fetch(baseUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Referer': baseUrl,
-      }
-    });
-    
-    if (!mainPageResponse.ok) {
-      console.error(`Error: ${mainPageResponse.status}`);
-      return res.status(mainPageResponse.status).json({ error: "Gagal mengambil halaman utama" });
-    }
-
-    const mainPageData = await mainPageResponse.text();
-    const $ = cheerio.load(mainPageData);
-
-    // Mengambil CSRF token
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-
-    if (!csrfToken) {
-      return res.status(500).json({ error: "CSRF token tidak ditemukan" });
-    }
-
-    // URL untuk permintaan ongoing anime
+    // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-      'Referer': baseUrl,
-      'X-CSRF-Token': csrfToken // Sertakan CSRF token dalam header
-    };
+    const response = await fetch(urlOngoing, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+      },
+    });
+    const data = await response.text();
 
-    // Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
-    const ongoingResponse = await fetch(urlOngoing, { headers });
+    console.log(response.status);
+    console.log(data);
 
-    if (!ongoingResponse.ok) {
-      console.error(`Error: ${ongoingResponse.status}`);
-      return res.status(ongoingResponse.status).json({ error: "Gagal mengambil halaman ongoing anime" });
-    }
-
-    const ongoingData = await ongoingResponse.text();
-    const $$ = cheerio.load(ongoingData);
+    // Muat data HTML dengan cheerio
+    const $ = cheerio.load(data);
     let ongoingAnime = [];
 
-    $$("#animeList > div > div").each((index, element) => {
-      const title = $$(element).find("div > h5").text().trim();
-      const image = $$(element).find("a > div").attr("data-setbg");
-      const episode = $$(element).find("a > div > div.ep > span").text().trim();
-      const type = $$(element)
+    // Parse data anime dari HTML
+    $("#animeList > div > div").each((index, element) => {
+      const title = $(element).find("div > h5").text().trim();
+      const image = $(element).find("a > div").attr("data-setbg");
+      const episode = $(element).find("a > div > div.ep > span").text().trim();
+      const type = $(element)
         .find("div > ul > a")
-        .map((index, element) => $$(element).text().trim())
+        .map((index, element) => $(element).text().trim())
         .get();
-      const animeCode = $$(element).find("a").attr("href")?.split("/")[4];
-      const animeId = $$(element).find("a").attr("href")?.split("/")[5];
+      const animeCode = $(element).find("a").attr("href")?.split("/")[4];
+      const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
       if (title && image && episode && type && animeCode && animeId) {
         ongoingAnime.push({
@@ -76,19 +49,17 @@ const getOngoingAnime = async (req, res) => {
       }
     });
 
-    const nextPage = $$(".gray__color .fa-angle-right").length === 0;
-    const prevPage = $$(".gray__color .fa-angle-left").length === 0;
+    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
     console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 const getFinisedAnime = async (req, res) => {
   try {
