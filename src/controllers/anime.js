@@ -8,8 +8,14 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // 1. Ambil halaman utama untuk mendapatkan CSRF token
-    const mainPageResponse = await fetch(baseUrl);
+    const mainPageResponse = await fetch(baseUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Referer': baseUrl,
+      }
+    });
     
     if (!mainPageResponse.ok) {
       console.error(`Error: ${mainPageResponse.status}`);
@@ -19,17 +25,15 @@ const getOngoingAnime = async (req, res) => {
     const mainPageData = await mainPageResponse.text();
     const $ = cheerio.load(mainPageData);
 
-    // 2. Ambil CSRF token
+    // Mengambil CSRF token
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
     if (!csrfToken) {
       return res.status(500).json({ error: "CSRF token tidak ditemukan" });
     }
 
-    // 3. Buat URL untuk permintaan ongoing anime
+    // URL untuk permintaan ongoing anime
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    console.log("URL yang diambil:", urlOngoing);
-
     const headers = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -37,7 +41,7 @@ const getOngoingAnime = async (req, res) => {
       'X-CSRF-Token': csrfToken // Sertakan CSRF token dalam header
     };
 
-    // 4. Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
+    // Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
     const ongoingResponse = await fetch(urlOngoing, { headers });
 
     if (!ongoingResponse.ok) {
@@ -46,9 +50,6 @@ const getOngoingAnime = async (req, res) => {
     }
 
     const ongoingData = await ongoingResponse.text();
-    console.log("Data ongoing:", ongoingData); // Log data yang didapat
-
-    // Proses data ongoingAnime seperti sebelumnya
     const $$ = cheerio.load(ongoingData);
     let ongoingAnime = [];
 
@@ -75,7 +76,6 @@ const getOngoingAnime = async (req, res) => {
       }
     });
 
-    // Tentukan apakah ada halaman berikutnya atau sebelumnya
     const nextPage = $$(".gray__color .fa-angle-right").length === 0;
     const prevPage = $$(".gray__color .fa-angle-left").length === 0;
 
@@ -87,6 +87,7 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const getFinisedAnime = async (req, res) => {
