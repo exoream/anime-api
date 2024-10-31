@@ -8,60 +8,60 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Ambil halaman pertama untuk mendapatkan CSRF token dan cookie
-    const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const initialResponse = await fetch(urlOngoing);
+    // 1. Ambil halaman utama untuk mendapatkan CSRF token
+    const mainPageResponse = await fetch(baseUrl);
     
-    // Periksa status response
-    if (initialResponse.status !== 200) {
-      console.error(`Error: ${initialResponse.status}`);
-      return res.status(initialResponse.status).json({ error: "Gagal mengambil halaman" });
+    if (!mainPageResponse.ok) {
+      console.error(`Error: ${mainPageResponse.status}`);
+      return res.status(mainPageResponse.status).json({ error: "Gagal mengambil halaman utama" });
     }
 
-    const initialData = await initialResponse.text();
-    
-    // Ambil CSRF token dari halaman
-    const $ = cheerio.load(initialData);
+    const mainPageData = await mainPageResponse.text();
+    const $ = cheerio.load(mainPageData);
+
+    // 2. Ambil CSRF token
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
-    // Ambil cookie dari response
-    const cookies = initialResponse.headers.get('set-cookie');
-
-    // Periksa apakah CSRF token ditemukan
     if (!csrfToken) {
       return res.status(500).json({ error: "CSRF token tidak ditemukan" });
     }
 
-    // Lakukan permintaan dengan CSRF token dan cookie
+    // 3. Buat URL untuk permintaan ongoing anime
+    const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
+    console.log("URL yang diambil:", urlOngoing);
+
     const headers = {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrfToken,
-      'Cookie': cookies, // Sertakan cookies yang diperoleh
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'Referer': urlOngoing // Pastikan referer sesuai
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Referer': baseUrl,
+      'X-CSRF-Token': csrfToken // Sertakan CSRF token dalam header
     };
 
-    const response = await fetch(urlOngoing, { headers });
-    const data = await response.text();
+    // 4. Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
+    const ongoingResponse = await fetch(urlOngoing, { headers });
 
-    // Cek status response
-    if (response.status !== 200) {
-      console.error(`Error: ${response.status}`);
-      return res.status(response.status).json({ error: "Gagal mengambil data" });
+    if (!ongoingResponse.ok) {
+      console.error(`Error: ${ongoingResponse.status}`);
+      return res.status(ongoingResponse.status).json({ error: "Gagal mengambil halaman ongoing anime" });
     }
 
+    const ongoingData = await ongoingResponse.text();
+    console.log("Data ongoing:", ongoingData); // Log data yang didapat
+
+    // Proses data ongoingAnime seperti sebelumnya
+    const $$ = cheerio.load(ongoingData);
     let ongoingAnime = [];
 
-    $("#animeList > div > div").each((index, element) => {
-      const title = $(element).find("div > h5").text().trim();
-      const image = $(element).find("a > div").attr("data-setbg");
-      const episode = $(element).find("a > div > div.ep > span").text().trim();
-      const type = $(element)
+    $$("#animeList > div > div").each((index, element) => {
+      const title = $$(element).find("div > h5").text().trim();
+      const image = $$(element).find("a > div").attr("data-setbg");
+      const episode = $$(element).find("a > div > div.ep > span").text().trim();
+      const type = $$(element)
         .find("div > ul > a")
-        .map((index, element) => $(element).text().trim())
+        .map((index, element) => $$(element).text().trim())
         .get();
-      const animeCode = $(element).find("a").attr("href")?.split("/")[4];
-      const animeId = $(element).find("a").attr("href")?.split("/")[5];
+      const animeCode = $$(element).find("a").attr("href")?.split("/")[4];
+      const animeId = $$(element).find("a").attr("href")?.split("/")[5];
 
       if (title && image && episode && type && animeCode && animeId) {
         ongoingAnime.push({
@@ -75,16 +75,18 @@ const getOngoingAnime = async (req, res) => {
       }
     });
 
-    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
-    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
+    // Tentukan apakah ada halaman berikutnya atau sebelumnya
+    const nextPage = $$(".gray__color .fa-angle-right").length === 0;
+    const prevPage = $$(".gray__color .fa-angle-left").length === 0;
 
+    console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 
 const getFinisedAnime = async (req, res) => {
