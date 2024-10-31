@@ -8,53 +8,33 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Step 1: Ambil halaman awal untuk mendapatkan CSRF token dan cookies
-    const initialResponse = await fetch(`${baseUrl}`, { credentials: 'include' });
-
-    // Periksa apakah respons awal berhasil
-    if (!initialResponse.ok) {
-      throw new Error(`Initial fetch failed with status: ${initialResponse.status}`);
-    }
-
-    // Ambil cookies dari header
-    const csrfCookies = initialResponse.headers.get('set-cookie');
-    console.log("CSRF Cookies:", csrfCookies); // Log untuk debugging
-
-    // Ambil token XSRF
-    const csrfToken = csrfCookies
-      ?.split('; ')
-      .find(cookie => cookie.startsWith('XSRF-TOKEN='))
-      ?.split('=')[1];
-
-    // Verifikasi apakah token CSRF ditemukan
-    if (!csrfToken) {
-      throw new Error("CSRF token not found");
-    }
-
-    // Step 2: Buat URL dan ambil data dari URL dengan menyertakan CSRF token dan cookies
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const response = await fetch(urlOngoing, {
-      method: 'GET',
-      headers: {
-        'X-CSRF-TOKEN': csrfToken,
-        'Cookie': csrfCookies,
-      },
-      credentials: 'include',
-    });
+    const initialResponse = await fetch(urlOngoing);
+    const initialData = await initialResponse.text();
 
-    // Periksa apakah respons berhasil
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+    // Load the initial HTML response to extract the CSRF token
+    const $ = cheerio.load(initialData);
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    // Check if CSRF token was found
+    if (!csrfToken) {
+      return res.status(500).json({ error: "CSRF token not found" });
     }
 
-    const data = await response.text();
-    console.log(response.status);
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken,
+    };
 
-    // Muat data HTML dengan cheerio
-    const $ = cheerio.load(data);
+    // Make a second fetch request with the headers
+    const response = await fetch(urlOngoing, { headers });
+    const data = await response.text();
+
+    console.log(response.status);
+    console.log(data);
+
     let ongoingAnime = [];
 
-    // Parse data anime dari HTML
     $("#animeList > div > div").each((index, element) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
@@ -78,9 +58,9 @@ const getOngoingAnime = async (req, res) => {
       }
     });
 
-    // Tentukan apakah ada halaman berikutnya atau sebelumnya
-    const nextPage = $("a.gray__color .fa-angle-right").length > 0;
-    const prevPage = $("a.gray__color .fa-angle-left").length > 0;
+    // Check for next and previous pages
+    const nextPage = $("a.gray__color .fa-angle-right").length === 0;
+    const prevPage = $("a.gray__color .fa-angle-left").length === 0;
 
     console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
@@ -89,7 +69,6 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 
 const getFinisedAnime = async (req, res) => {
