@@ -8,40 +8,15 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Buat URL untuk mengambil data ongoing anime
+    // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-
-    // Set header untuk permintaan, termasuk cookie
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Referer": baseUrl,
-      "Cookie": [
-        "_ga=GA1.1.132130558.1729660422",
-        "sel_timezone_v2=Asia/Makassar",
-        "auto_timezone_v2=yes",
-        "full_timezone_v2=Waktu Indonesia Tengah",
-        "short_timezone_v2=WITA",
-        "preferred_stserver=kuramadrive",
-        "should_do_galak=show",
-        "_ga_D00EX1436J=GS1.1.1730481618.4.0.1730481618.0.0.0",
-        "XSRF-TOKEN=eyJpdiI6ImZBQ3RYTUxHU0pZTGYwTUplTEkzV3c9PSIsInZhbHVlIjoiYUhLNzlYMUExZERINUszbWZ1WFR2ejFRNnFkcWZWQlhKVTBJUVdML3ZMc29Od1FxcmxGZmFDUnlsTTRxclFHOXRWTHdldFpoVUNuRGlZSHpoLzNJc2dscVlaZTUvVXhmN1JoNHNCaTg4cjRFVTdoNXRSWnRLZC9FaGh5bG1IbXQiLCJtYWMiOiJjODk4YmM5Njk4NzkyZTM0YjI4NjA5NTc0MWIyMjFlYmQzMDRmMzNhM2UzMTI2YWVmOTgwOGVmMTFkMjEyMjRiIiwidGFnIjoiIn0%3D",
-      ].join('; '),
-    };
-
-    console.log("Fetching URL:", urlOngoing);
-    console.log("With headers:", headers);
-
-    const response = await fetch(urlOngoing, { headers });
-
-    // Cek apakah respons berhasil
-    if (!response.ok) {
-      const errorMessage = await response.text(); // Ambil pesan error
-      console.error(`Failed to fetch ongoing anime: ${response.status} - ${response.statusText} - ${errorMessage}`);
-      return res.status(response.status).json({ error: "Gagal mengambil data ongoing anime" });
-    }
-
+    const response = await fetch(urlOngoing);
     const data = await response.text();
+
+    console.log(response.status);
+    console.log(data);
+
+    // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
     let ongoingAnime = [];
 
@@ -50,11 +25,14 @@ const getOngoingAnime = async (req, res) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
       const episode = $(element).find("a > div > div.ep > span").text().trim();
-      const type = $(element).find("div > ul > a").map((index, element) => $(element).text().trim()).get();
+      const type = $(element)
+        .find("div > ul > a")
+        .map((index, element) => $(element).text().trim())
+        .get();
       const animeCode = $(element).find("a").attr("href")?.split("/")[4];
       const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
-      if (title && image && episode && type.length && animeCode && animeId) {
+      if (title && image && episode && type && animeCode && animeId) {
         ongoingAnime.push({
           title,
           image,
@@ -73,8 +51,8 @@ const getOngoingAnime = async (req, res) => {
     console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
   } catch (error) {
-    console.error("Error fetching ongoing anime:", error);
-    res.status(500).json({ error: "Terjadi kesalahan pada server" });
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
 };
 
