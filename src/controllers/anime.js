@@ -16,17 +16,28 @@ const getOngoingAnime = async (req, res) => {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Referer": baseUrl,
-      "Cookie": "XSRF-TOKEN=eyJpdiI6IndsS0tXWHZhdG1qSGJCMGNZeFFTcWc9PSIsInZhbHVlIjoiTi82TlFabFJFY2NIUnF2WUJpczAzSVB3Y2FXeXJrc3dTZWFnMi9SODFzc1Z2cHNCWXkxY1lFTUUzUkJ3UlZ4alluS3lFNDNsWE54T0JYTGc1WCtJR2hJSytOb1JlTithVThuU05GUk9lTXRqVnBwdC9aUmdIWHBIL1B4TU1hTmIiLCJtYWMiOiI2MDc1NzgyNmZlYTViMWRiNmRlZDI5YzA5OTg5N2UzZjZkNTkyYTk0MTVlMjdlMTJiZGU0ODFjN2I5MDU5OGQ1IiwidGFnIjoiIn0%3D; kuramanime_session=eyJpdiI6IjZ2T3Z2VWo0cmE5OEtTRnhOeDRnV0E9PSIsInZhbHVlIjoiMGZwTzlqS2QwK2RpWGkyWFBlUHYrRHI0VEEvVTNyMExhdDZsL3lpNUlySE56em1COVJPZmx2aEx1eS83d2R3ODlCb3d0dFpoVk1jNkNUakxkZHF4T2VCcTd0L2NOMFVvUHJ5WFRvRjFMNnVMdndIMjE1UkVTL3FZc3lIQi81RGQiLCJtYWMiOiI1NzM4ZTE1OTk2OTk3Y2I1Y2JmNjk5NzJmZTk0ODJmNmE0MzE1NzQxYTQ2NGZmYjNlNWI4ZTJlYzY2MWRkMDQ0IiwidGFnIjoiIn0%3D; kuramanime_session=eyJpdiI6IjZ2T3Z2VWo0cmE5OEtTRnhOeDRnV0E9PSIsInZhbHVlIjoiMGZwTzlqS2QwK2RpWGkyWFBlUHYrRHI0VEEvVTNyMExhdDZsL3lpNUlySE56em1COVJPZmx2aEx1eS83d2R3ODlCb3d0dFpoVk1jNkNUakxkZHF4T2VCcTd0L2NOMFVvUHJ5WFRvRjFMNnVMdndIMjE1UkVTL3FZc3lIQi81RGQiLCJtYWMiOiI1NzM4ZTE1OTk2OTk3Y2I1Y2JmNjk5NzJmZTk0ODJmNmE0MzE1NzQxYTQ2NGZmYjNlNWI4ZTJlYzY2MWRkMDQ0IiwidGFnIjoiIn0%3D;", // Tambahkan cookie yang diperlukan
+      "Cookie": [
+        "_ga=GA1.1.132130558.1729660422",
+        "sel_timezone_v2=Asia/Makassar",
+        "auto_timezone_v2=yes",
+        "full_timezone_v2=Waktu Indonesia Tengah",
+        "short_timezone_v2=WITA",
+        "preferred_stserver=kuramadrive",
+        "should_do_galak=show",
+        "_ga_D00EX1436J=GS1.1.1730481618.4.0.1730481618.0.0.0",
+        "XSRF-TOKEN=eyJpdiI6ImZBQ3RYTUxHU0pZTGYwTUplTEkzV3c9PSIsInZhbHVlIjoiYUhLNzlYMUExZERINUszbWZ1WFR2ejFRNnFkcWZWQlhKVTBJUVdML3ZMc29Od1FxcmxGZmFDUnlsTTRxclFHOXRWTHdldFpoVUNuRGlZSHpoLzNJc2dscVlaZTUvVXhmN1JoNHNCaTg4cjRFVTdoNXRSWnRLZC9FaGh5bG1IbXQiLCJtYWMiOiJjODk4YmM5Njk4NzkyZTM0YjI4NjA5NTc0MWIyMjFlYmQzMDRmMzNhM2UzMTI2YWVmOTgwOGVmMTFkMjEyMjRiIiwidGFnIjoiIn0%3D",
+        "kuramanime_session=eyJpdiI6IkZ0b2VlZlhXUmxyMjdGcWUybkw3Vmc9PSIsInZhbHVlIjoiTng3OFVobnFMaTI4ZnZJTHM2aFM4MHdlOHVGYTI3em9HUCtYQldaSXdiMGlXN0hab2owY0FBRURIb2hIN29lVm9qOXZMMWpCT3VweGZEYmNXSlZQN2ptZnlXbTZJTTJNS040UEpGSlJRYnJrRURnOTd0dHkxRTk5WWM2R3cyNk8iLCJtYWMiOiI4OTZmZWIzNDhkMzQ0MDAxZTQ0ODkwZjM5MzY5ZTM3OGQ0MDZkOWJhYWQ0YmE3NjdiODliNGExOTVlZmYzNWM2IiwidGFnIjoiIn0%3D"
+      ].join('; '), // Gabungkan cookie menjadi string
     };
 
     // Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
-    const response = await fetch(urlOngoing, { headers }, );
+    const response = await fetch(urlOngoing, { headers });
 
     // Cek apakah respons berhasil
     if (!response.ok) {
       const errorMessage = await response.text(); // Ambil pesan error
       console.error(`Failed to fetch ongoing anime: ${response.status} - ${response.statusText} - ${errorMessage}`);
-      return res.status(response.status).json({ error: `Gagal mengambil data ongoing anime: ${response.status} - ${response.statusText} - ${errorMessage}` });
+      return res.status(response.status).json({ error: "Gagal mengambil data ongoing anime" });
     }
 
     const data = await response.text();
@@ -38,14 +49,11 @@ const getOngoingAnime = async (req, res) => {
       const title = $(element).find("div > h5").text().trim();
       const image = $(element).find("a > div").attr("data-setbg");
       const episode = $(element).find("a > div > div.ep > span").text().trim();
-      const type = $(element)
-        .find("div > ul > a")
-        .map((index, element) => $(element).text().trim())
-        .get();
+      const type = $(element).find("div > ul > a").map((index, element) => $(element).text().trim()).get();
       const animeCode = $(element).find("a").attr("href")?.split("/")[4];
       const animeId = $(element).find("a").attr("href")?.split("/")[5];
 
-      if (title && image && episode && type && animeCode && animeId) {
+      if (title && image && episode && type.length && animeCode && animeId) {
         ongoingAnime.push({
           title,
           image,
@@ -64,10 +72,11 @@ const getOngoingAnime = async (req, res) => {
     console.log(ongoingAnime);
     res.status(200).json({ ongoingAnime, nextPage, prevPage });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching ongoing anime:", error);
+    res.status(500).json({ error: "Terjadi kesalahan pada server" });
   }
 };
+
 
 const getFinisedAnime = async (req, res) => {
   try {
