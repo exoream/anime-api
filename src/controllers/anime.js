@@ -26,10 +26,12 @@ const getOngoingAnime = async (req, res) => {
         "should_do_galak=show",
         "_ga_D00EX1436J=GS1.1.1730481618.4.0.1730481618.0.0.0",
         "XSRF-TOKEN=eyJpdiI6ImZBQ3RYTUxHU0pZTGYwTUplTEkzV3c9PSIsInZhbHVlIjoiYUhLNzlYMUExZERINUszbWZ1WFR2ejFRNnFkcWZWQlhKVTBJUVdML3ZMc29Od1FxcmxGZmFDUnlsTTRxclFHOXRWTHdldFpoVUNuRGlZSHpoLzNJc2dscVlaZTUvVXhmN1JoNHNCaTg4cjRFVTdoNXRSWnRLZC9FaGh5bG1IbXQiLCJtYWMiOiJjODk4YmM5Njk4NzkyZTM0YjI4NjA5NTc0MWIyMjFlYmQzMDRmMzNhM2UzMTI2YWVmOTgwOGVmMTFkMjEyMjRiIiwidGFnIjoiIn0%3D",
-      ].join('; '), // Gabungkan cookie menjadi string
+      ].join('; '),
     };
 
-    // Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
+    console.log("Fetching URL:", urlOngoing);
+    console.log("With headers:", headers);
+
     const response = await fetch(urlOngoing, { headers });
 
     // Cek apakah respons berhasil
