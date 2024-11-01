@@ -8,20 +8,28 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-    // Buat URL dan ambil data dari URL
+    // Buat URL untuk mengambil data ongoing anime
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const response = await fetch(urlOngoing, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-      },
-    });
+
+    // Set header untuk permintaan, termasuk cookie
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Referer": baseUrl,
+      "Cookie": "XSRF-TOKEN=eyJpdiI6IndsS0tXWHZhdG1qSGJCMGNZeFFTcWc9PSIsInZhbHVlIjoiTi82TlFabFJFY2NIUnF2WUJpczAzSVB3Y2FXeXJrc3dTZWFnMi9SODFzc1Z2cHNCWXkxY1lFTUUzUkJ3UlZ4alluS3lFNDNsWE54T0JYTGc1WCtJR2hJSytOb1JlTithVThuU05GUk9lTXRqVnBwdC9aUmdIWHBIL1B4TU1hTmIiLCJtYWMiOiI2MDc1NzgyNmZlYTViMWRiNmRlZDI5YzA5OTg5N2UzZjZkNTkyYTk0MTVlMjdlMTJiZGU0ODFjN2I5MDU5OGQ1IiwidGFnIjoiIn0%3D; kuramanime_session=eyJpdiI6IjZ2T3Z2VWo0cmE5OEtTRnhOeDRnV0E9PSIsInZhbHVlIjoiMGZwTzlqS2QwK2RpWGkyWFBlUHYrRHI0VEEvVTNyMExhdDZsL3lpNUlySE56em1COVJPZmx2aEx1eS83d2R3ODlCb3d0dFpoVk1jNkNUakxkZHF4T2VCcTd0L2NOMFVvUHJ5WFRvRjFMNnVMdndIMjE1UkVTL3FZc3lIQi81RGQiLCJtYWMiOiI1NzM4ZTE1OTk2OTk3Y2I1Y2JmNjk5NzJmZTk0ODJmNmE0MzE1NzQxYTQ2NGZmYjNlNWI4ZTJlYzY2MWRkMDQ0IiwidGFnIjoiIn0%3D", // Tambahkan cookie yang diperlukan
+    };
+
+    // Lakukan permintaan untuk mendapatkan anime yang sedang berlangsung
+    const response = await fetch(urlOngoing, { headers });
+
+    // Cek apakah respons berhasil
+    if (!response.ok) {
+      const errorMessage = await response.text(); // Ambil pesan error
+      console.error(`Failed to fetch ongoing anime: ${response.status} - ${response.statusText} - ${errorMessage}`);
+      return res.status(response.status).json({ error: "Gagal mengambil data ongoing anime" });
+    }
+
     const data = await response.text();
-
-    console.log(response.status);
-    console.log(data);
-
-    // Muat data HTML dengan cheerio
     const $ = cheerio.load(data);
     let ongoingAnime = [];
 
