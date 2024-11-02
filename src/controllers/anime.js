@@ -10,7 +10,12 @@ const getOngoingAnime = async (req, res) => {
 
     // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const response = await fetch(urlOngoing);
+    const response = await fetch(urlOngoing, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      },
+    });
     const data = await response.text();
 
     console.log(response.status);
@@ -55,7 +60,6 @@ const getOngoingAnime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const getFinisedAnime = async (req, res) => {
   try {
