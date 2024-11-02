@@ -21,7 +21,6 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
-
     const headers = {
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
       "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -35,10 +34,11 @@ const getOngoingAnime = async (req, res) => {
       "Sec-Fetch-User": "?1",
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
     }
+
     // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
     const proxyUrl = getScrapeopsUrl(urlOngoing);
-    const response = await fetch(proxyUrl, {headers: headers});
+    const response = await fetch(proxyUrl, { timeout: 10000});
     const data = await response.text();
 
     console.log(headers);
