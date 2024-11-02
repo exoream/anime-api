@@ -2,6 +2,7 @@ const cheerio = require("cheerio");
 const baseUrl = require("../utils/constanta/url");
 const extractData = require("../utils/helper/extract_data");
 const getEpisodeList = require("../utils/helper/episode_data");
+const axios = require("axios");
 
 const API_KEY = "c47303bb-5e15-40c9-86a2-3d037faef4d2";
 
