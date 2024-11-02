@@ -8,16 +8,26 @@ const getOngoingAnime = async (req, res) => {
     const order_by = req.query.order_by || "updated";
     const page = req.query.page || 1;
 
+
+    const headers = {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "id,en;q=0.9",
+      "Cache-Control": "max-age=0",
+      "Connection": "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-User": "?1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    }
     // Buat URL dan ambil data dari URL
     const urlOngoing = `${baseUrl}/quick/ongoing?order_by=${order_by}&page=${page}`;
-    const response = await fetch(urlOngoing, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-      },
-    });
+    const response = await fetch(urlOngoing, {headers: headers});
     const data = await response.text();
 
+    console.log(headers);
     console.log(response.status);
     console.log(data);
 
